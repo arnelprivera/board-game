@@ -13,12 +13,12 @@
             text-align: center;
             background-color: #8a1e50;
             margin: 0;
-            padding: 0; /* Removed padding to maximize centering space */
+            padding: 0;
             color: white;
-            min-height: 100vh; /* Ensure body takes full viewport height */
+            min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center; /* Center content vertically */
+            align-items: center;
         }
         #game-container {
             max-width: 800px;
@@ -26,8 +26,9 @@
             padding: 10px;
             display: flex;
             flex-direction: column;
-            align-items: center; /* Center children horizontally */
-            justify-content: center; /* Center children vertically */
+            align-items: center;
+            justify-content: center;
+            position: relative; /* Added for positioning rules button */
         }
         #board {
             display: grid;
@@ -38,8 +39,8 @@
             border: 3px solid #333;
             border-radius: 12px;
             width: 100%;
-            max-width: 518px; /* (6 * 80px) + (5 * 5px gaps) + (2 * 10px padding) + (2 * 3px border) */
-            margin: 20px auto; /* Maintain horizontal centering, vertical handled by parent */
+            max-width: 518px;
+            margin: 20px auto;
         }
         .space {
             width: 75px;
@@ -129,7 +130,7 @@
             border: 2px solid #333;
             transition: background-color 0.3s ease;
         }
-        #modal {
+        #modal, #rules-modal {
             display: none;
             position: fixed;
             top: 0;
@@ -140,7 +141,7 @@
             justify-content: center;
             align-items: center;
         }
-        #modal-content {
+        #modal-content, #rules-modal-content {
             background-color: white;
             padding: 20px;
             border-radius: 10px;
@@ -155,7 +156,7 @@
             width: 80%;
             font-size: 16px;
         }
-        #modal-content button {
+        #modal-content button, #rules-modal-content button {
             padding: 10px 20px;
             margin: 5px;
             cursor: pointer;
@@ -165,9 +166,30 @@
             border: none;
             border-radius: 5px;
         }
+        #timer {
+            font-size: 16px;
+            font-weight: bold;
+            color: #FF0000;
+            margin: 10px 0;
+        }
         .subscript {
             font-size: 0.7em;
             vertical-align: sub;
+        }
+        #rules-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        #rules-btn:hover {
+            background-color: #1976D2;
         }
         @media (max-width: 600px) {
             #game-container {
@@ -212,6 +234,10 @@
                 font-size: 14px;
                 color: white;
             }
+            #rules-btn {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
         }
         @media (max-width: 400px) {
             .space {
@@ -236,12 +262,17 @@
                 font-size: 12px;
                 color: white;
             }
+            #rules-btn {
+                font-size: 10px;
+                padding: 5px 10px;
+            }
         }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <h1>Formula Quest</h1>
+        <button id="rules-btn">Rules</button>
+        <h1>Symbolic Solver</h1>
         <div id="board"></div>
         <div id="dice-container">
             <div id="dice">🎲 Roll: -</div>
@@ -254,8 +285,20 @@
     <div id="modal">
         <div id="modal-content">
             <p id="task-question"></p>
+            <div id="timer">Time: 10</div>
             <input type="text" id="task-answer" placeholder="Enter your answer">
             <button id="submit-answer">Submit</button>
+        </div>
+    </div>
+    <div id="rules-modal">
+        <div id="rules-modal-content">
+            <h2>Symbolic Solver Rules</h2>
+            <p>1. Players take turns rolling a die to move along the board.</p>
+            <p>2. Land on an Element, Formula, or Challenge tile to answer a chemistry question within the time limit (10s for Element, 45s for Formula, 60s for Challenge).</p>
+            <p>3. Correct answers keep you in place; incorrect answers move you back 1 space.</p>
+            <p>4. Penalty or Red tiles move you back 2 spaces.</p>
+            <p>5. To win, reach the Finish tile and correctly answer the final question.</p>
+            <button id="close-rules">Close</button>
         </div>
     </div>
     <script>
@@ -264,31 +307,31 @@
             { type: 'start', label: 'Start' },
             { type: 'element', question: 'Write the symbol for Sodium.', answer: 'Na' },
             { type: 'formula', question: 'Write the formula for Calcium Chloride.', answer: 'CaCl2' },
-            { type: 'challenge', question: 'Balance: H2 + O2 → H2O', answer: '2H2 + O2 → 2H2O' },
+            { type: 'challenge', question: 'Balance: H2 + O2 = H2O', answer: '2H2 + O2 = 2H2O' },
             { type: 'penalty', action: 'Go back 2 spaces.' },
             { type: 'element', question: 'Write the symbol for Calcium.', answer: 'Ca' },
             { type: 'formula', question: 'Write the formula for Ammonia.', answer: 'NH3' },
-            { type: 'challenge', question: 'Balance: Na + Cl2 → NaCl', answer: '2Na + Cl2 → 2NaCl' },
+            { type: 'challenge', question: 'Balance: Na + Cl2 = NaCl', answer: '2Na + Cl2 = 2NaCl' },
             { type: 'penalty', action: 'Go back 2 spaces.' },
             { type: 'element', question: 'Write the symbol for Oxygen.', answer: 'O' },
             { type: 'formula', question: 'Write the formula for Sodium Chloride.', answer: 'NaCl' },
-            { type: 'challenge', question: 'Balance: CH4 + O2 → CO2 + H2O', answer: 'CH4 + 2O2 → CO2 + 2H2O' },
+            { type: 'challenge', question: 'Balance: CH4 + O2 = CO2 + H2O', answer: 'CH4 + 2O2 = CO2 + 2H2O' },
             { type: 'penalty', action: 'Go back 2 spaces.' },
             { type: 'element', question: 'Write the symbol for Hydrogen.', answer: 'H' },
             { type: 'formula', question: 'Write the formula for Water.', answer: 'H2O' },
-            { type: 'challenge', question: 'Balance: N2 + H2 → NH3', answer: 'N2 + 3H2 → 2NH3' },
+            { type: 'challenge', question: 'Balance: N2 + H2 = NH3', answer: 'N2 + 3H2 = 2NH3' },
             { type: 'penalty', action: 'Go back 2 spaces.' },
             { type: 'element', question: 'Write the symbol for Carbon.', answer: 'C' },
             { type: 'formula', question: 'Write the formula for Carbon Dioxide.', answer: 'CO2' },
-            { type: 'challenge', question: 'Balance: Fe + O2 → Fe2O3', answer: '4Fe + 3O2 → 2Fe2O3' },
+            { type: 'challenge', question: 'Balance: Fe + O2 = Fe2O3', answer: '4Fe + 3O2 = 2Fe2O3' },
             { type: 'penalty', action: 'Go back 2 spaces.' },
             { type: 'element', question: 'Write the symbol for Nitrogen.', answer: 'N' },
             { type: 'formula', question: 'Write the formula for Magnesium Oxide.', answer: 'MgO' },
-            { type: 'challenge', question: 'Balance: Al + O2 → Al2O3', answer: '4Al + 3O2 → 2Al2O3' },
+            { type: 'challenge', question: 'Balance: Al + O2 = Al2O3', answer: '4Al + 3O2 = 2Al2O3' },
             { type: 'penalty', action: 'Go back 2 spaces.' },
             { type: 'element', question: 'Write the symbol for Chlorine.', answer: 'Cl' },
             { type: 'formula', question: 'Write the formula for Potassium Hydroxide.', answer: 'KOH' },
-            { type: 'challenge', question: 'Balance: C2H6 + O2 → CO2 + H2O', answer: '2C2H6 + 7O2 → 4CO2 + 6H2O' },
+            { type: 'challenge', question: 'Balance: C2H6 + O2 = CO2 + H2O', answer: '2C2H6 + 7O2 = 4CO2 + 6H2O' },
             { type: 'penalty', action: 'Go back 2 spaces.' },
             { type: 'finish', label: 'Finish', question: 'Write the formula for Aluminum Sulfate.', answer: 'Al2(SO4)3' }
         ];
@@ -297,6 +340,8 @@
         let currentPlayer = 0;
         let gameOver = false;
         let questionAskedThisTurn = false;
+        let timerInterval = null;
+        let timeLeft = 10;
 
         const board = document.getElementById('board');
         const diceDisplay = document.getElementById('dice');
@@ -308,6 +353,10 @@
         const taskQuestion = document.getElementById('task-question');
         const taskAnswer = document.getElementById('task-answer');
         const submitAnswer = document.getElementById('submit-answer');
+        const timerDisplay = document.getElementById('timer');
+        const rulesBtn = document.getElementById('rules-btn');
+        const rulesModal = document.getElementById('rules-modal');
+        const closeRules = document.getElementById('close-rules');
 
         function createBoard() {
             spaces.forEach((space, index) => {
@@ -381,11 +430,38 @@
             updateTileIndicators();
         }
 
-        function showModal(question, callback) {
+        function startTimer(tileType, callback) {
+            timeLeft = tileType === 'element' ? 10 : tileType === 'formula' ? 45 : 60;
+            timerDisplay.textContent = `Time: ${timeLeft}`;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = `Time: ${timeLeft}`;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    modal.style.display = 'none';
+                    message.textContent = `Player ${currentPlayer + 1}: Time's up! Go back 1 space.`;
+                    movePlayer(currentPlayer, -1);
+                    switchTurn();
+                    rollBtn.disabled = false;
+                    callback(null);
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function showModal(question, tileType, callback) {
             taskQuestion.textContent = `Player ${currentPlayer + 1}: ${question}`;
             taskAnswer.value = '';
             modal.style.display = 'flex';
+            startTimer(tileType, callback);
             submitAnswer.onclick = () => {
+                stopTimer();
                 callback(taskAnswer.value.trim());
                 modal.style.display = 'none';
             };
@@ -413,7 +489,8 @@
                 }, 500);
             } else if ((space.type === 'element' || space.type === 'formula' || space.type === 'challenge') && !questionAskedThisTurn) {
                 questionAskedThisTurn = true;
-                showModal(space.question, (answer) => {
+                showModal(space.question, space.type, (answer) => {
+                    if (answer === null) return; // Timer ran out, handled in startTimer
                     if (answer === space.answer) {
                         message.textContent = `Player ${playerNum}: Correct!`;
                     } else {
@@ -425,9 +502,10 @@
                 });
             } else if (space.type === 'finish' && !questionAskedThisTurn) {
                 questionAskedThisTurn = true;
-                showModal(space.question, (answer) => {
+                showModal(space.question, 'challenge', (answer) => {
+                    if (answer === null) return; // Timer ran out, handled in startTimer
                     if (answer === space.answer) {
-                        message.textContent = `Congratulations! Player ${playerNum} wins Formula Quest!`;
+                        message.textContent = `Congratulations! Player ${playerNum} wins Symbolic Solver!`;
                         gameOver = true;
                     } else {
                         message.textContent = `Player ${playerNum}: Incorrect. Try again on your next turn.`;
@@ -451,9 +529,17 @@
             resolveSpace();
         });
 
+        // Rules button functionality
+        rulesBtn.addEventListener('click', () => {
+            rulesModal.style.display = 'flex';
+        });
+
+        closeRules.addEventListener('click', () => {
+            rulesModal.style.display = 'none';
+        });
+
         createBoard();
         updateTileIndicators();
     </script>
 </body>
-
 </html>
