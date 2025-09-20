@@ -28,7 +28,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            position: relative; /* Added for positioning rules button */
+            position: relative;
         }
         #board {
             display: grid;
@@ -46,6 +46,7 @@
             width: 75px;
             height: 80px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             border: 1px solid #000;
@@ -82,6 +83,20 @@
             border-left: 3px solid #FFFF99;
             border-right: 3px solid #FFFF99;
             box-shadow: 0 0 8px rgba(255, 165, 0, 0.6), 0 0 8px rgba(255, 255, 153, 0.6);
+        }
+        .player-icon {
+            font-size: 20px;
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .player1-icon::before {
+            content: '\265F'; /* Black chess pawn for Player 1 */
+        }
+        .player2-icon::before {
+            content: '\2659'; /* White chess pawn for Player 2, colored purple */
+            color: purple; /* Apply purple color to the pawn */
         }
         #dice-container {
             margin: 20px 0;
@@ -216,6 +231,9 @@
                 border: 2px solid #000;
                 box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
             }
+            .player-icon {
+                font-size: 16px;
+            }
             #dice {
                 font-size: 20px;
                 color: white;
@@ -243,6 +261,9 @@
             .space {
                 font-size: 10px;
                 color: #333;
+            }
+            .player-icon {
+                font-size: 14px;
             }
             #dice {
                 font-size: 18px;
@@ -362,9 +383,9 @@
             spaces.forEach((space, index) => {
                 const spaceDiv = document.createElement('div');
                 spaceDiv.classList.add('space', space.type);
-                spaceDiv.textContent = space.label || index + 1;
+                spaceDiv.innerHTML = `<span class="space-label">${space.label || index + 1}</span>`;
                 if (space.type === 'formula' || space.type === 'challenge') {
-                    spaceDiv.innerHTML = spaceDiv.textContent.replace(/(\d+)/g, '<span class="subscript">$1</span>');
+                    spaceDiv.querySelector('.space-label').innerHTML = spaceDiv.querySelector('.space-label').textContent.replace(/(\d+)/g, '<span class="subscript">$1</span>');
                 }
                 board.appendChild(spaceDiv);
             });
@@ -378,15 +399,29 @@
         function updateTileIndicators() {
             Array.from(board.children).forEach(space => {
                 space.classList.remove('player1', 'player2', 'both-players');
+                const icon = space.querySelector('.player-icon');
+                if (icon) icon.remove();
             });
 
             const pos1 = playerPositions[0];
             const pos2 = playerPositions[1];
             if (pos1 === pos2) {
                 board.children[pos1].classList.add('both-players');
+                const iconDiv = document.createElement('div');
+                iconDiv.classList.add('player-icon', 'player1-icon');
+                board.children[pos1].appendChild(iconDiv);
+                const iconDiv2 = document.createElement('div');
+                iconDiv2.classList.add('player-icon', 'player2-icon');
+                board.children[pos1].appendChild(iconDiv2);
             } else {
                 board.children[pos1].classList.add('player1');
+                const iconDiv1 = document.createElement('div');
+                iconDiv1.classList.add('player-icon', 'player1-icon');
+                board.children[pos1].appendChild(iconDiv1);
                 board.children[pos2].classList.add('player2');
+                const iconDiv2 = document.createElement('div');
+                iconDiv2.classList.add('player-icon', 'player2-icon');
+                board.children[pos2].appendChild(iconDiv2);
             }
 
             const space1 = spaces[pos1];
@@ -529,7 +564,6 @@
             resolveSpace();
         });
 
-        // Rules button functionality
         rulesBtn.addEventListener('click', () => {
             rulesModal.style.display = 'flex';
         });
